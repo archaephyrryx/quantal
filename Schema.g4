@@ -11,7 +11,7 @@ command :
   | querycmd
   ;
 
-querycmd: GET ID QSTRING (PERIOD|SEMI)			#Query
+querycmd: GET ID COLON QSTRING (PERIOD|SEMI)			#Query
      ;
 
 queryfile : (queryline)*
@@ -29,6 +29,10 @@ constraint : ID comp value				#EvalConstraint
       ;
 
 comp : EQUALS						#EqualTo
+     | LESS						#LessThan
+     | MORE						#MoreThan
+     | LEAST						#AtLeast
+     | MOST						#AtMost
      ;
 
 value : v=NUMBER					#EvalNumberValue
@@ -41,11 +45,11 @@ clarifyblock :
   ;
 
 letblock :
-    LET ID proplist (PERIOD|SEMI)		#LetType
+    LET ID COLON proplist (PERIOD|SEMI)		#LetType
     ;
 
 loadcmd :
-    LOAD ID QSTRING (SEMI|PERIOD)		#Load
+    LOAD ID COLON QSTRING (SEMI|PERIOD)		#Load
     ;
 
 proplist :
@@ -102,7 +106,11 @@ COLON	: ':' ;
 SEMI	: ';' ;
 PERIOD	: '.' ;
 COMMA	: ',' ;
-EQUALS :  '=' ;
+EQUALS  : '=' ;
+LEAST   : '>>' ;
+MOST    : '<<' ;
+LESS    : '<' ;
+MORE    : '>' ;
 
 ID : [A-Za-z] [A-Za-z0-9]* ;
 WS : [ \t\n\r]+ -> skip ;

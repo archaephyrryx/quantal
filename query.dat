@@ -1,2 +1,3 @@
-Year=2001, Title="test 1", InPrint=false;
-Title="test 2", Year=2002;
+Year>>2005;
+Year=2005;
+Year<<2005;
