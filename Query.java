@@ -25,7 +25,7 @@ public class Query {
 }
 
 class Constraint {
-    public enum Comparison { Equals, MoreThan, LessThan, LessOrEqual, MoreOrEqual};
+    public enum Comparison { NotEquals, Equals, MoreThan, LessThan, LessOrEqual, MoreOrEqual };
     public Attribute _attr;
     public Comparison _comp;
     public Entry _value;
@@ -35,10 +35,7 @@ class Constraint {
 	Symbol.Type attrType = attr.getActualType();
 	Entry.Type valueType = value.getType();
 
-	if ((attrType == Symbol.Type.IntType && valueType == Entry.Type.Number) ||
-	    (attrType == Symbol.Type.BoolType && valueType == Entry.Type.Bool) ||
-	    (attrType == Symbol.Type.StrType && valueType == Entry.Type.String)) {
-
+	if (attrType == valueType) {
 	    _attr = attr;
 	    _comp = comp;
 	    _value = value;
@@ -128,28 +125,19 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	Attribute attr = con._attr;
 	Entry val = con._value;
 	Constraint.Comparison comp = con._comp;
-	if (con._attr.getActualType() == Symbol.Type.BoolType) {
-	    return getAll();
-	} else {
+	if (con._attr.getActualType() == Symbol.Type.BoolType) { return getAll(); }
+	else {
 	    AVLTree tree = _sym._trees.get(_sym._atIndex.get(attr._name).intValue());
-
-	    if (comp == Constraint.Comparison.Equals) {
-		return tree.getEqual(val);
-	    } 
-	    if (comp == Constraint.Comparison.MoreThan) {
-		return tree.getMoreThan(val);
-	    } 
-	    if (comp == Constraint.Comparison.LessThan) {
-		return tree.getLessThan(val);
-	    } 
-	    if (comp == Constraint.Comparison.MoreOrEqual) {
-		return tree.getMoreOrEqual(val);
-	    } 
-	    if (comp == Constraint.Comparison.LessOrEqual) {
-		return tree.getLessOrEqual(val);
-	    } 
+	    switch (comp) {
+		case Constraint.Comparison.Equals: return tree.getEqual(val);
+		case Constraint.Comparison.NotEquals: return tree.getNotEqual(val);
+		case Constraint.Comparison.MoreThan: return tree.getMoreThan(val);
+		case Constraint.Comparison.LessThan: return tree.getLessThan(val);
+		case Constraint.Comparison.MoreOrEqual: return tree.getMoreOrEqual(val);
+		case Constraint.Comparison.LessOrEqual: return tree.getLessOrEqual(val);
+		default: return null;
+	    }
 	}
-	return null;
     }
 
     public ArrayList<ArrayList<Entry>> getAll() {
@@ -177,20 +165,20 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
     }
 
     public boolean testConstraint(ArrayList<Entry> obj, Constraint con) {
-	Attribute attr = con._attr;
-	Constraint.Comparison comp = con._comp;
-	int index = _sym._atIndex.get(attr._name).intValue();
-	Entry val = con._value;
+	int index = _sym._atIndex.get(con._attr._name).intValue();
 	Entry objval = obj.get(index);
+	Entry val = con._value;
 
-	if (comp == Constraint.Comparison.Equals) {
-	    return (objval.equals(val));
+	switch (con._comp) {
+	    case Constraint.Comparison.Equals: return (objval.equals(val));
+	    case Constraint.Comparison.NotEquals: return !(objval.equals(val));
+	    case Constraint.Comparison.LessThan: return (objval.compareTo(val) < 0);
+	    case Constraint.Comparison.MoreThan: return (objval.compareTo(val) > 0);
+	    case Constraint.Comparison.LessOrEqual: return (objval.compareTo(val) <= 0);
+	    case Constraint.Comparison.MoreOrEqual: return (objval.compareTo(val) >= 0);
+	    default: return true;
 	}
-
-	return true;
     }
-
-
     @Override
 	public QNode visitEvalConstraint(SchemaParser.EvalConstraintContext ctx) { 
 	    String attrname = (ctx.ID()).getText();
@@ -205,6 +193,10 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	    return new QNode(Constraint.Comparison.Equals);
 	}
 
+    @Override
+	public QNode visitNotEqualTo(SchemaParser.NotEqualToContext ctx) {
+	    return new QNode(Constraint.Comparison.NotEquals);
+	}
 
     @Override
 	public QNode visitLessThan(SchemaParser.LessThanContext ctx) {
@@ -216,11 +208,11 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	    return new QNode(Constraint.Comparison.MoreThan);
 	}
 
-
     @Override
 	public QNode visitAtLeast(SchemaParser.AtLeastContext ctx) {
 	    return new QNode(Constraint.Comparison.MoreOrEqual);
 	}
+
     @Override
 	public QNode visitAtMost(SchemaParser.AtMostContext ctx) {
 	    return new QNode(Constraint.Comparison.LessOrEqual);

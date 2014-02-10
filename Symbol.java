@@ -2,7 +2,7 @@
 import java.util.*;
 
 class Symbol {
-    public enum Type { IntType, StrType, BoolType, AliasType, CompoundType };
+    public enum Type { IntType, BoolType, StrType, AliasType, CompoundType };
     public String _name;
     public Type _type;
     public Symbol(String name, Type type) { _name = name; _type = type; }

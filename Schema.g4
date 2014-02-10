@@ -1,8 +1,7 @@
 grammar Schema;
 
 schema :
-      ( command '\n' )*
-      ;
+      ( command '\n' )* ;
 
 command :
     letblock
@@ -29,6 +28,7 @@ constraint : ID comp value				#EvalConstraint
       ;
 
 comp : EQUALS						#EqualTo
+     | NEQUALS						#NotEqualTo
      | LESS						#LessThan
      | MORE						#MoreThan
      | LEAST						#AtLeast
@@ -106,6 +106,7 @@ COLON	: ':' ;
 SEMI	: ';' ;
 PERIOD	: '.' ;
 COMMA	: ',' ;
+NEQUALS  : '!=' ;
 EQUALS  : '=' ;
 LEAST   : '>>' ;
 MOST    : '<<' ;

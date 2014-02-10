@@ -8,6 +8,25 @@ public class AVLTree {
 	_root = null;
     }
 
+    public void print() {
+	if (_root != null) {
+	    _root.print(0);
+	}
+    }
+
+    public int getDepth(AVLNode node) {
+	AVLNode head = node;
+	int dep = 0;
+	while (head != _root) {
+	    ++dep;
+	    head = head.parent;
+	}
+	return dep;
+    }
+
+
+
+
     public void addEntry( Entry csv, ArrayList<Entry> obj  ) {
 	if (_root == null) {
 	    _root = new AVLNode(csv, obj);
@@ -29,7 +48,7 @@ public class AVLTree {
 		if (_head.rightChild == null) {
 		    _head.rightChild = new AVLNode(csv, obj);
 		    _head.rightChild.parent = _head;
-//  		    this.rebalance(_head.rightChild);
+  		    this.rebalance(_head.parent);
 		    return;
 		}
 		_head = _head.rightChild;
@@ -40,7 +59,7 @@ public class AVLTree {
 		if (_head.leftChild == null) {
 		    _head.leftChild = new AVLNode(csv, obj);
 		    _head.leftChild.parent = _head;
-//  		    this.rebalance(_head.leftChild);
+  		    this.rebalance(_head.parent);
 		    return;
 		}
 		_head = _head.leftChild;
@@ -89,12 +108,18 @@ public class AVLTree {
 	_root.getLessOrEqual(pool, val);
 	return pool;
     }
+
     public ArrayList<ArrayList<Entry>> getAll() {
 	ArrayList<ArrayList<Entry>> pool = new ArrayList<ArrayList<Entry>>();
 	_root.getAll(pool);
 	return pool;
     }
 
+    public ArrayList<ArrayList<Entry>> getNotEqual(Entry val) {
+	ArrayList<ArrayList<Entry>> pool = new ArrayList<ArrayList<Entry>>();
+	_root.getNotEqual(pool, val);
+	return pool;
+    }
     public ArrayList<ArrayList<Entry>> getAll(AVLNode head) {
 	ArrayList<ArrayList<Entry>> pool = new ArrayList<ArrayList<Entry>>();
 	head.getAll(pool);
@@ -122,62 +147,77 @@ public class AVLTree {
     protected void rebalance(AVLNode node) {
 	AVLNode link;
 
-	for (link = _head = node; _head != null ; link = _head, _head = _head.parent) {
+	for (_head = node; _head != null; ) {
+	    int dep = getDepth(_head);
 	    int bal = balance(_head);
-	    if (bal < -1 || bal > 1) {
-	        if (link.relation() == -1) {
-		    if (balance(link) < 0)
-			rotate_left(link);
-		    rotate_right(_head);
-		} else {
-		    if (balance(link) > 0)
-			rotate_right(link);
-		    rotate_left(_head);
+	    if (bal > 1) { // Left Case
+		link = _head.leftChild;
+		if (balance(link) < 0) {
+		    rotate_left(link); // Reduce L-R to L-L
 		}
+		rotate_right(_head);
 	    }
+	    if (bal < -1) { // Right Case
+		link = _head.rightChild;
+		if (balance(link) > 0) {
+		    rotate_right(link); // Reduce R-L to R-R
+		}
+		rotate_left(_head);
+	    }
+	    if (dep == 0) {
+		break;
+	    }
+	    while (getDepth(_head) > dep - 1) { _head = _head.parent; } 
+	    continue;
 	}
+	return;
     }
 
     protected void rotate_right(AVLNode node) {
-	AVLNode root, pivot, wedge;
+	AVLNode root, pivot, wedge, ground;
 
 	root = node;
-	if (root.leftChild != null){ 
-	    pivot = root.disownLeft();
-	    if (pivot.rightChild != null) {
-		wedge = pivot.disownRight();
-		root.adoptLeft(wedge);
-		if (root.parent != null) {
-		    if (root.relation() == 1)
-			root.parent.swapRight(pivot);
-		    else
-			root.parent.swapLeft(pivot);
-		} else 
-		    _root = pivot;
-		pivot.adoptRight(root);
+	if ((pivot = root.leftChild) != null) { 
+	    wedge = pivot.rightChild;
+	    root.leftChild = wedge;
+	    if ((wedge) != null)
+		wedge.parent = root;
+	    pivot.rightChild = root;
+	    if (root.equals(_root)) {
+		_root = pivot;
+	    } else {
+		ground = root.parent;
+		if (root.equals(ground.rightChild))
+		    ground.rightChild = pivot;
+		if (root.equals(ground.leftChild))
+		    ground.leftChild = pivot;
+		pivot.parent = ground;
 	    }
+	    root.parent = pivot;
 	}
-
     }
  
     protected void rotate_left(AVLNode node) {
-	AVLNode root, pivot, wedge;
+	AVLNode root, pivot, wedge, ground;
 
 	root = node;
-	if (root.rightChild != null) { 
-	    pivot = root.disownRight();
-	    if (pivot.leftChild != null) {
-		wedge = pivot.disownLeft();
-		root.adoptRight(wedge);
-		if (root.parent != null) {
-		    if (root.relation() == 1)
-			root.parent.swapRight(pivot);
-		    else
-			root.parent.swapLeft(pivot);
-		} else 
-		    _root = pivot;
-		pivot.adoptLeft(root);
+	if ((pivot = root.rightChild) != null) { 
+	    wedge = pivot.leftChild;
+	    root.rightChild = wedge;
+	    if (wedge != null)
+		wedge.parent = root;
+	    pivot.leftChild = root;
+	    if (root.equals(_root)) {
+		_root = pivot;
+	    } else {
+		ground = root.parent;
+		if (root.equals(ground.rightChild))
+		    ground.rightChild = pivot;
+		if (root.equals(ground.leftChild))
+		    ground.leftChild = pivot;
+		pivot.parent = ground;
 	    }
+	    root.parent = pivot;
 	}
     }
 
@@ -196,7 +236,19 @@ class AVLNode {
 	_objs = new ArrayList<ArrayList<Entry>>();
 	_objs.add(obj);
     }
- 
+
+    public void print(int depth) {
+	if (rightChild != null) {
+	    rightChild.print(depth + 1);
+	}
+	for (int i = 0; i < depth; ++i) {
+	    System.out.print("\t");
+	}
+	System.out.print("<" + _csv + ">\n");
+	if (leftChild != null) {
+	    leftChild.print(depth + 1);
+	}
+    }
 
     public void getAll(ArrayList<ArrayList<Entry>> pool) {
 	if (leftChild != null) {
@@ -222,10 +274,10 @@ class AVLNode {
 	    }
 	}
 	if (comp < 0) {
+	    pool.addAll(this._objs);
 	    if (rightChild != null) {
 		rightChild.getLess(pool, val);
 	    }
-	    pool.addAll(this._objs);
 	}
     }
 
@@ -242,10 +294,10 @@ class AVLNode {
 	    }
 	}
 	if (comp > 0) {
+	    pool.addAll(this._objs);
 	    if (leftChild != null) {
 		leftChild.getMore(pool, val);
 	    }
-	    pool.addAll(this._objs);
 	}
     }
 
@@ -288,6 +340,22 @@ class AVLNode {
 	    }
 	}
     }
+
+    public void getNotEqual(ArrayList<ArrayList<Entry>> pool, Entry val) {
+	if (leftChild != null) {
+	    leftChild.getNotEqual(pool, val);
+	}
+	if (!(val.equals(_csv))) {
+	    pool.addAll(this._objs);
+	}
+	if (rightChild != null) {
+	    rightChild.getNotEqual(pool, val);
+	}
+    }
+
+
+
+
     public int compareTo(AVLNode other) {
 	return _csv.compareTo(other._csv);
     }
@@ -297,40 +365,5 @@ class AVLNode {
 
     public void addObject(ArrayList<Entry> obj) {
 	_objs.add(obj);
-    }
-
-    public AVLNode disownLeft() {
-	AVLNode orphan = leftChild;
-	orphan.parent = null;
-	leftChild = null;
-	return orphan;
-    }
-    public AVLNode disownRight() {
-	AVLNode orphan = rightChild;
-	orphan.parent = null;
-	rightChild = null;
-	return orphan;
-    }
-
-    public AVLNode swapLeft(AVLNode newLeftChild) {
-	AVLNode oldLeftChild = this.disownLeft();
-	this.adoptLeft(newLeftChild);
-	return oldLeftChild;
-    }
-
-    public AVLNode swapRight(AVLNode newRightChild) {
-	AVLNode oldRightChild = this.disownRight();
-	this.adoptRight(newRightChild);
-	return oldRightChild;
-    }
-
-    public void adoptLeft(AVLNode orphan) {
-	leftChild = orphan;
-	orphan.parent = this;
-    }
-
-    public void adoptRight(AVLNode orphan) {
-	rightChild = orphan;
-	orphan.parent = this;
     }
 }
