@@ -30,14 +30,17 @@ class Constraint {
     public Comparison _comp;
     public Entry _value;
 
-
-    public Constraint( Attribute attr, Comparison comp, Entry value ) {
+    public boolean typeCompatCheck( Attribute attr, Entry value ) {
 	Symbol.Type attrType = attr.getActualType();
 	Entry.Type valueType = value.getType();
 
-	if ((attrType == Symbol.Type.IntType && valueType == Entry.Type.Number) ||
-	    (attrType == Symbol.Type.BoolType && valueType == Entry.Type.Bool) ||
-	    (attrType == Symbol.Type.StrType && valueType == Entry.Type.String)) {
+	return ((attrType == Symbol.Type.IntType && valueType == Entry.Type.Number) ||
+	        (attrType == Symbol.Type.BoolType && valueType == Entry.Type.Bool) ||
+		(attrType == Symbol.Type.StrType && valueType == Entry.Type.String));
+    }
+
+    public Constraint( Attribute attr, Comparison comp, Entry value ) {
+	if (typeCompatCheck(attr, value)) {
 	    _attr = attr;
 	    _comp = comp;
 	    _value = value;
@@ -51,18 +54,16 @@ class Constraint {
 	String ret = "";
 	ret += _attr.toString();
 	switch (_comp) {
-	    case NotEquals: ret += "!=";
-	    case Equals: ret += "=";
-	    case MoreThan: ret += ">";
-	    case LessThan: ret += "<";
-	    case LessOrEqual: ret += "<<";
-	    case MoreOrEqual: ret += ">>";
+	    case NotEquals: ret += "!="; break;
+	    case Equals: ret += "="; break;
+	    case MoreThan: ret += ">"; break;
+	    case LessThan: ret += "<"; break;
+	    case LessOrEqual: ret += "<<"; break;
+	    case MoreOrEqual: ret += ">>"; break;
 	}
 	ret += _value.toString();
 	return ret;
     }
-
-
 }
 
 
@@ -93,12 +94,10 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	ArrayList<Constraint> cons = visit(ctx.constraints())._constraints;
 	ArrayList<ArrayList<Entry>> matches = initialize(cons);
 
-	for (Constraint current : cons) {
+	for (Constraint current : cons)
 	    matches = filter(matches, current);
-	}
 
 	printOut(cons, matches);
-
 	return null;
     }
 
@@ -147,6 +146,7 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	if (con._attr.getActualType() == Symbol.Type.BoolType) { return getAll(); }
 	else {
 	    AVLTree tree = _sym._trees.get(_sym._atIndex.get(attr._name).intValue());
+	    //tree.print();
 	    switch (comp) {
 		case Equals: return tree.getEqual(val);
 		case NotEquals: return tree.getNotEqual(val);

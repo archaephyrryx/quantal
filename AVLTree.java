@@ -8,43 +8,27 @@ public class AVLTree {
 	_root = null;
     }
 
-    public void print() {
-	if (_root != null) {
-	    _root.print(0);
-	}
-    }
+    public void print() { if (_root != null) { _root.print(0); } }
 
     public int getDepth(AVLNode node) {
 	AVLNode head = node;
-	int dep = 0;
-	while (head != _root) {
-	    ++dep;
-	    head = head.parent;
-	}
+	int dep;
+	for (dep = 0; head != _root; ++dep, head=head.parent) {continue;}
 	return dep;
     }
 
-
-
-
-    public void addEntry( Entry csv, ArrayList<Entry> obj  ) {
-	if (_root == null) {
-	    _root = new AVLNode(csv, obj);
-	    return;
-	}
+    public void addEntry( Entry csv, ArrayList<Entry> obj ) {
+	if (_root == null) { _root = new AVLNode(csv, obj); return; }
 
 	_head = _root;
 	int compvalue;
 
 	while (_head != null) {
 	    compvalue = csv.compareTo(_head._csv);
-
 	    if (compvalue == 0) {
 		_head.addObject( obj );
 		return;
-	    }
-
-	    if (compvalue > 0) {
+	    } else if (compvalue > 0) {
 		if (_head.rightChild == null) {
 		    _head.rightChild = new AVLNode(csv, obj);
 		    _head.rightChild.parent = _head;
@@ -52,10 +36,7 @@ public class AVLTree {
 		    return;
 		}
 		_head = _head.rightChild;
-		continue;
-	    }
-
-	    if (compvalue < 0)  {
+	    } else if (compvalue < 0)  {
 		if (_head.leftChild == null) {
 		    _head.leftChild = new AVLNode(csv, obj);
 		    _head.leftChild.parent = _head;
@@ -63,26 +44,14 @@ public class AVLTree {
 		    return;
 		}
 		_head = _head.leftChild;
-		continue;
 	    }
 	}
     }
 
     public ArrayList<ArrayList<Entry>> getEqual(Entry val) {
-	int compvalue;
-	_head = _root;
-
-	while ( _head != null ) {
-	    compvalue = val.compareTo(_head._csv);
-
-	    if (compvalue < 0)
-		_head = _head.leftChild;
-	    if (compvalue == 0)
-		return _head._objs;
-	    if (compvalue > 0)
-		_head = _head.rightChild;
-	}
-	return null;
+	ArrayList<ArrayList<Entry>> pool = new ArrayList<ArrayList<Entry>>();
+	_root.getEqual(pool, val);
+	return pool;
     }
 
     public ArrayList<ArrayList<Entry>> getMoreThan(Entry val) {
@@ -250,22 +219,53 @@ class AVLNode {
 	}
     }
 
+    public void getEqual(ArrayList<ArrayList<Entry>> pool, Entry val) {
+	int comp = val.compareTo(_csv);
+
+	if (comp < 0 && leftChild != null)
+	    leftChild.getEqual(pool, val);
+	if (comp == 0)
+	    pool.addAll(this._objs);
+	if (comp > 0 && rightChild != null)
+	    rightChild.getEqual(pool, val);
+    }
+
+
     public void getAll(ArrayList<ArrayList<Entry>> pool) {
 	if (leftChild != null) {
 	    leftChild.getAll(pool);
 	}
+	pool.addAll(this._objs);
 	if (rightChild != null) {
 	    rightChild.getAll(pool);
 	}
-	pool.addAll(this._objs);
     }
 
+    public void getAllAsc(ArrayList<ArrayList<Entry>> pool) {
+	if (leftChild != null) {
+	    leftChild.getAllAsc(pool);
+	}
+	pool.addAll(this._objs);
+	if (rightChild != null) {
+	    rightChild.getAllAsc(pool);
+	}
+    }
+
+    public void getAllDesc(ArrayList<ArrayList<Entry>> pool) {
+	if (rightChild != null) {
+	    rightChild.getAllDesc(pool);
+	}
+	pool.addAll(this._objs);
+	if (leftChild != null) {
+	    leftChild.getAllDesc(pool);
+	}
+    }
 
     public void getLess(ArrayList<ArrayList<Entry>> pool, Entry val) {
 	int comp = _csv.compareTo(val);
 	if (comp <= 0) {
 	    if (leftChild != null) {
-		leftChild.getAll(pool);
+		leftChild.getAllAsc(pool);
 	    }
 	}
 	if (comp > 0) {
@@ -285,7 +285,7 @@ class AVLNode {
 	int comp = _csv.compareTo(val);
 	if (comp >= 0) {
 	    if (rightChild != null) {
-		rightChild.getAll(pool);
+		rightChild.getAllDesc(pool);
 	    }
 	}
 	if (comp < 0) {
@@ -305,7 +305,7 @@ class AVLNode {
 	int comp = _csv.compareTo(val);
 	if (comp <= 0) {
 	    if (leftChild != null) {
-		leftChild.getAll(pool);
+		leftChild.getAllAsc(pool);
 	    }
 	    pool.addAll(this._objs);
 	}
@@ -325,7 +325,7 @@ class AVLNode {
 	int comp = _csv.compareTo(val);
 	if (comp >= 0) {
 	    if (rightChild != null) {
-		rightChild.getAll(pool);
+		rightChild.getAllDesc(pool);
 	    }
 	    pool.addAll(this._objs);
 	}
@@ -352,9 +352,6 @@ class AVLNode {
 	    rightChild.getNotEqual(pool, val);
 	}
     }
-
-
-
 
     public int compareTo(AVLNode other) {
 	return _csv.compareTo(other._csv);

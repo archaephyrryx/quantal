@@ -51,9 +51,6 @@ public class Entry<T extends Comparable<T>> {
 	}
     }
 
-
-
-
     public String toString() {
 	//Overwritten
 	return "OVERWRITTEN";
