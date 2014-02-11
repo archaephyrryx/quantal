@@ -35,7 +35,9 @@ class Constraint {
 	Symbol.Type attrType = attr.getActualType();
 	Entry.Type valueType = value.getType();
 
-	if (attrType == valueType) {
+	if ((attrType == Symbol.Type.IntType && valueType == Entry.Type.Number) ||
+	    (attrType == Symbol.Type.BoolType && valueType == Entry.Type.Bool) ||
+	    (attrType == Symbol.Type.StrType && valueType == Entry.Type.String)) {
 	    _attr = attr;
 	    _comp = comp;
 	    _value = value;
@@ -44,6 +46,23 @@ class Constraint {
 	    // Type exception
 	}
     }
+
+    public String toString() {
+	String ret = "";
+	ret += _attr.toString();
+	switch (_comp) {
+	    case NotEquals: ret += "!=";
+	    case Equals: ret += "=";
+	    case MoreThan: ret += ">";
+	    case LessThan: ret += "<";
+	    case LessOrEqual: ret += "<<";
+	    case MoreOrEqual: ret += ">>";
+	}
+	ret += _value.toString();
+	return ret;
+    }
+
+
 }
 
 
@@ -78,7 +97,7 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	    matches = filter(matches, current);
 	}
 
-	printOut(matches);
+	printOut(cons, matches);
 
 	return null;
     }
@@ -107,8 +126,8 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	return null;
     }
 
-    public void printOut(ArrayList<ArrayList<Entry>> matches) {
-
+    public void printOut(ArrayList<Constraint> cons, ArrayList<ArrayList<Entry>> matches) {
+	System.out.printf("Query Criteria: %s\n", cons.toString());
 	System.out.printf("Successfully found %d %ss meeting criterion-set.\n\n", matches.size(), _sym._name);
 	int i = 0;
 	for (ArrayList<Entry> a : matches) {
@@ -129,12 +148,12 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	else {
 	    AVLTree tree = _sym._trees.get(_sym._atIndex.get(attr._name).intValue());
 	    switch (comp) {
-		case Constraint.Comparison.Equals: return tree.getEqual(val);
-		case Constraint.Comparison.NotEquals: return tree.getNotEqual(val);
-		case Constraint.Comparison.MoreThan: return tree.getMoreThan(val);
-		case Constraint.Comparison.LessThan: return tree.getLessThan(val);
-		case Constraint.Comparison.MoreOrEqual: return tree.getMoreOrEqual(val);
-		case Constraint.Comparison.LessOrEqual: return tree.getLessOrEqual(val);
+		case Equals: return tree.getEqual(val);
+		case NotEquals: return tree.getNotEqual(val);
+		case MoreThan: return tree.getMoreThan(val);
+		case LessThan: return tree.getLessThan(val);
+		case MoreOrEqual: return tree.getMoreOrEqual(val);
+		case LessOrEqual: return tree.getLessOrEqual(val);
 		default: return null;
 	    }
 	}
@@ -170,12 +189,12 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	Entry val = con._value;
 
 	switch (con._comp) {
-	    case Constraint.Comparison.Equals: return (objval.equals(val));
-	    case Constraint.Comparison.NotEquals: return !(objval.equals(val));
-	    case Constraint.Comparison.LessThan: return (objval.compareTo(val) < 0);
-	    case Constraint.Comparison.MoreThan: return (objval.compareTo(val) > 0);
-	    case Constraint.Comparison.LessOrEqual: return (objval.compareTo(val) <= 0);
-	    case Constraint.Comparison.MoreOrEqual: return (objval.compareTo(val) >= 0);
+	    case Equals: return (objval.equals(val));
+	    case NotEquals: return !(objval.equals(val));
+	    case LessThan: return (objval.compareTo(val) < 0);
+	    case MoreThan: return (objval.compareTo(val) > 0);
+	    case LessOrEqual: return (objval.compareTo(val) <= 0);
+	    case MoreOrEqual: return (objval.compareTo(val) >= 0);
 	    default: return true;
 	}
     }

@@ -63,4 +63,7 @@ class Attribute {
     public Symbol.Type getActualType() {
 	return this._type.actualType();
     }
+    public String toString() {
+	return this._name;
+    }
 }
