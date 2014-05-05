@@ -9,6 +9,7 @@ MOOSES	= \
 	SchemaVisitor.java
 
 SRCS = \
+	Shelf.java \
 	QString.java \
 	Symbol.java \
 	AVLTree.java \

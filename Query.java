@@ -92,7 +92,7 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
     @Override
     public QNode visitGetQuery(SchemaParser.GetQueryContext ctx) {
 	ArrayList<Constraint> cons = visit(ctx.constraints())._constraints;
-	ArrayList<ArrayList<Entry>> matches = initialize(cons);
+	Shelf matches = initialize(cons);
 
 	for (Constraint current : cons)
 	    matches = filter(matches, current);
@@ -102,8 +102,8 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
     }
 
 
-    public ArrayList<ArrayList<Entry>> initialize(ArrayList<Constraint> cons) {
-	ArrayList<ArrayList<Entry>> matches;
+    public Shelf initialize(ArrayList<Constraint> cons) {
+	Shelf matches;
 	for (Constraint current : cons) {
 	    if (current._attr.getActualType() == Symbol.Type.StrType) {
 		matches = findMatch(current);
@@ -125,7 +125,7 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	return null;
     }
 
-    public void printOut(ArrayList<Constraint> cons, ArrayList<ArrayList<Entry>> matches) {
+    public void printOut(ArrayList<Constraint> cons, Shelf matches) {
 	System.out.printf("Query Criteria: %s\n", cons.toString());
 	System.out.printf("Successfully found %d %ss meeting criterion-set.\n\n", matches.size(), _sym._name);
 	int i = 0;
@@ -139,40 +139,43 @@ class QueryVisitor extends SchemaBaseVisitor<QNode> {
 	}
     }
 
-    public ArrayList<ArrayList<Entry>> findMatch(Constraint con) {
+    public Shelf findMatch(Constraint con) {
 	Attribute attr = con._attr;
 	Entry val = con._value;
 	Constraint.Comparison comp = con._comp;
 	if (con._attr.getActualType() == Symbol.Type.BoolType) { return getAll(); }
 	else {
+	    Shelf matches = new Shelf();
 	    AVLTree tree = _sym._trees.get(_sym._atIndex.get(attr._name).intValue());
 	    //tree.print();
 	    switch (comp) {
-		case Equals: return tree.getEqual(val);
-		case NotEquals: return tree.getNotEqual(val);
-		case MoreThan: return tree.getMoreThan(val);
-		case LessThan: return tree.getLessThan(val);
-		case MoreOrEqual: return tree.getMoreOrEqual(val);
-		case LessOrEqual: return tree.getLessOrEqual(val);
-		default: return null;
+		case Equals: return tree.getEqual(matches, val, tree.getRoot());
+		case NotEquals: return tree.getNotEqual(matches, val, tree.getRoot());
+		case MoreThan: return tree.getMoreThan(matches, val, tree.getRoot());
+		case LessThan: return tree.getLessThan(matches, val, tree.getRoot());
+		case MoreOrEqual: return tree.getMoreOrEqual(matches, val, tree.getRoot());
+		case LessOrEqual: return tree.getLessOrEqual(matches, val, tree.getRoot());
+		default: return matches;
 	    }
 	}
     }
 
-    public ArrayList<ArrayList<Entry>> getAll() {
+    public Shelf getAll() {
+	Shelf matches = new Shelf();
 	int numAttrs = _sym._attrs.size();
 
 	for (int i = 0; i < numAttrs; ++i) {
 	    Attribute attr = _sym._attrs.get(i);
 	    if (attr.getActualType() != Symbol.Type.BoolType) {
-		return _sym._trees.get(i).getAll();
+		AVLTree tree = _sym._trees.get(i);
+		return tree.getAll(matches, tree.getRoot());
 	    }
 	}
 	return null;
     }
 
-    public ArrayList<ArrayList<Entry>> filter(ArrayList<ArrayList<Entry>> pool, Constraint con) {
-	ArrayList<ArrayList<Entry>> newpool = new ArrayList<ArrayList<Entry>>();
+    public Shelf filter(Shelf pool, Constraint con) {
+	Shelf newpool = new Shelf();
 
 	for (ArrayList<Entry> obj : pool) {
 	   if (testConstraint(obj, con)) {
